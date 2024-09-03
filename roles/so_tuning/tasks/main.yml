@@ -1,0 +1,61 @@
+# tasks file for roles/so_tuning
+---
+- name: Change file sysctl.conf
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'fs.file-max', value: '200000' }
+    - { name: 'kernel.pid_max', value: '65535' }
+    - { name: 'net.core.rmem_default', value: '26214400' }
+    - { name: 'net.core.rmem_max', value: '26214400' }
+    - { name: 'net.core.wmem_default', value: '2621440' }
+    - { name: 'net.core.wmem_max', value: '2621440' }
+    - { name: 'net.core.somaxconn', value: '10000' }
+    - { name: 'vm.swappiness', value: '0' }
+    - { name: 'fs.inotify.max_user_instances', value: '1024'}
+    - { name: 'fs.inotify.max_queued_events', value: '32768'}
+    - { name: 'fs.inotify.max_user_watches', value: '24440'}
+    - { name: 'net.ipv4.tcp_max_syn_backlog', value: '100000'}
+    - { name: 'net.core.somaxconn', value: '100000'}
+    - { name: 'net.core.netdev_max_backlog', value: '100000'}
+  notify: Reload sysctl
+
+- name: Change value limits.conf
+  pam_limits:
+    domain: "{{ user }}"
+    limit_type: "{{ item.type }}"
+    limit_item: "{{ item.item }}"
+    value: "{{ item.value }}"
+  loop:
+    - { type: 'soft', item: 'nproc', value: '65535' }
+    - { type: 'hard', item: 'nproc', value: '65535' }
+    - { type: 'soft', item: 'nofile', value: '200000' }
+    - { type: 'hard', item: 'nofile', value: '200000' }
+  when: user != ""  # Solo aplicar si el usuario está definido
+
+- name: Configure NPROC limit for systemd services
+  lineinfile:
+    path: "/etc/systemd/{{ item }}"
+    regexp: 'DefaultLimitNPROC'
+    line: DefaultLimitNPROC=65535
+  loop:
+    - 'system.conf'
+    - 'user.conf'
+
+- name: Configure NOFILE limit for systemd services
+  lineinfile:
+    path: "/etc/systemd/{{ item }}"
+    regexp: 'DefaultLimitNOFILE'
+    line: DefaultLimitNOFILE=200000
+  loop:
+    - 'system.conf'
+    - 'user.conf'
+
+- name: Reload systemd to apply changes
+  command: systemctl daemon-reload
+  when: ansible_facts['os_family'] == "RedHat"
+
+

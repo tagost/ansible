@@ -1,0 +1,27 @@
+---
+# tasks file for roles/install_packages
+#- name: install tools
+#  become: yes
+#  package:
+#    name: "{{ item }}"
+#    state: present
+#  loop:
+#    - java-21-openjdk-headless
+#    - openssl
+#    - apr
+#    - wget
+#    - selinux-policy-devel
+- name: Required packages
+  yum:
+    name: 
+      - java-21-openjdk-headless
+      - openssl
+      - apr
+      - wget
+      - selinux-policy-devel
+    state: present
+- name: Remove tomcatjss if exists
+  yum:
+    name:
+      - tomcatjss
+    state: absent

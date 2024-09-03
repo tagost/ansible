@@ -1,0 +1,13 @@
+---
+- name: Install Jboss Web Server 6
+  hosts: all
+  remote_user: "gsosa"
+  become: true
+  become_method: sudo
+  vars:
+    user: tomcat
+  roles:
+    #- install_packages
+    #- install_jw6
+    #- cis_hardening
+    - so_tuning

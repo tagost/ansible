@@ -1,0 +1,37 @@
+---
+# vars file for roles/cis_hardening
+var_system_crypto_policy: !!str DEFAULT:NO-SHA1
+var_sudo_logfile: !!str /var/log/sudo.log
+var_sudo_timestamp_timeout: !!str 5
+var_authselect_profile: !!str sssd
+login_banner_text: !!str ^(Authorized[\s\n]+uses[\s\n]+only\.[\s\n]+All[\s\n]+activity[\s\n]+may[\s\n]+be[\s\n]+monitored[\s\n]+and[\s\n]+reported\.|^(?!.*(\\|fedora|rhel|sle|ubuntu)).*)$
+remote_login_banner_text: !!str ^(Authorized[\s\n]+uses[\s\n]+only\.[\s\n]+All[\s\n]+activity[\s\n]+may[\s\n]+be[\s\n]+monitored[\s\n]+and[\s\n]+reported\.|^(?!.*(\\|fedora|rhel|sle|ubuntu)).*)$
+motd_banner_text: !!str ^(Authorized[\s\n]+uses[\s\n]+only\.[\s\n]+All[\s\n]+activity[\s\n]+may[\s\n]+be[\s\n]+monitored[\s\n]+and[\s\n]+reported\.|^(?!.*(\\|fedora|rhel|sle|ubuntu)).*)$
+var_password_pam_remember: !!str 24
+var_password_pam_remember_control_flag: !!str requisite,required
+var_accounts_passwords_pam_faillock_deny: !!str 5
+var_accounts_passwords_pam_faillock_unlock_time: !!str 900
+var_password_pam_dictcheck: !!str 1
+var_password_pam_difok: !!str 2
+var_password_pam_maxrepeat: !!str 3
+var_password_pam_minclass: !!str 4
+var_password_pam_minlen: !!str 14
+var_account_disable_post_pw_expiration: !!str 45
+var_accounts_maximum_age_login_defs: !!str 365
+var_accounts_minimum_age_login_defs: !!str 1
+var_pam_wheel_group_for_su: !!str sugroup
+var_accounts_tmout: !!str 900
+var_accounts_user_umask: !!str 027
+var_sshd_set_keepalive: !!str 1
+sshd_idle_timeout_value: !!str 300
+var_sshd_set_login_grace_time: !!str 60
+var_sshd_max_sessions: !!str 10
+var_sshd_set_maxstartups: !!str 10:30:60
+sshd_strong_kex: !!str -diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
+sshd_strong_macs: !!str -hmac-md5,hmac-md5-96,hmac-ripemd160,hmac-sha1-96,umac-64@openssh.com,hmac-md5-etm@openssh.com,hmac-md5-96-etm@openssh.com,hmac-ripemd160-etm@openssh.com,hmac-sha1-96-etm@openssh.com,umac-64-etm@openssh.com
+var_accounts_passwords_pam_faillock_dir: !!str /var/run/faillock
+var_auditd_disk_error_action: !!str syslog|single|halt
+var_auditd_disk_full_action: !!str halt|single
+var_auditd_admin_space_left_action: !!str single|halt
+var_auditd_max_log_file_action: !!str keep_logs
+var_auditd_space_left_action: !!str email|exec|single|halt

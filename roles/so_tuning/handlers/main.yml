@@ -1,0 +1,4 @@
+---
+# handlers file for roles/so_tuning
+- name: Reload sysctl
+  command: sysctl -p

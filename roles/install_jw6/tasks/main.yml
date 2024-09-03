@@ -1,0 +1,32 @@
+---
+# tasks file for roles/install_jw6
+
+- name: Ensure JBoss group exists
+  group:
+    name: tomcat
+    state: present
+    gid: 53
+
+- name: Ensure tomcat  user exists
+  user:
+    name: tomcat
+    group: tomcat
+    create_home: no
+    shell: /bin/false
+    state: present
+    uid: 53
+
+- name: Copy and extract jboss web server zip file to remote machine
+  unarchive:
+    src: files/jws-6.0.0-application-server.zip
+    dest: /opt/
+    owner: tomcat
+    group: tomcat
+
+- name: Copy and extract jboss web server native components zip file to remote machine
+  unarchive:
+  unarchive:
+    src: files/jws-6.0.0-optional-native-components-RHEL9-x86_64.zip
+    dest: /opt/
+    owner: tomcat
+    group: tomcat
