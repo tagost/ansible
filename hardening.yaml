@@ -10,5 +10,5 @@
   roles:
     #- install_packages
     #- install_jw6
-    #- cis_hardening
+    - cis_hardening
     - so_tuning
