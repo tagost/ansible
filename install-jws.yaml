@@ -4,7 +4,7 @@
   remote_user: "gsosa"
   become: true
   become_method: sudo
-  gather_facts: false
+    #gather_facts: false
   vars:
     user: tomcat
   roles:
