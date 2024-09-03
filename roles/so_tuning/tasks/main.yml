@@ -13,7 +13,6 @@
     - { name: 'net.core.rmem_max', value: '26214400' }
     - { name: 'net.core.wmem_default', value: '2621440' }
     - { name: 'net.core.wmem_max', value: '2621440' }
-    - { name: 'net.core.somaxconn', value: '10000' }
     - { name: 'vm.swappiness', value: '0' }
     - { name: 'fs.inotify.max_user_instances', value: '1024'}
     - { name: 'fs.inotify.max_queued_events', value: '32768'}
