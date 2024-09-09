@@ -1,0 +1,24 @@
+---
+- name: "Ensure required parameters are provided."
+  ansible.builtin.assert:
+    that:
+      - jws is defined
+      - jws_home is defined
+      - jws.install_dir is defined
+    quiet: True
+
+- name: "Load server home directory information: {{ jws_home }}"
+  become: "{{ jws_install_unarchive_require_privilege_escalation }}"
+  ansible.builtin.stat:
+    path: "{{ jws_home }}"
+  register: jws_home_state
+
+- name: "Ensure server home directory exists."
+  ansible.builtin.assert:
+    that:
+      - jws_home_state is defined
+      - jws_home_state.stat is defined
+      - jws_home_state.stat.exists is defined
+      - jws_home_state.stat.exists
+      - jws_home_state.stat.isdir is defined
+      - jws_home_state.stat.isdir

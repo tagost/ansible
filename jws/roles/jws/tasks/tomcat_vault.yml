@@ -1,0 +1,123 @@
+---
+#- name: "Copy {{ jws.service.hr_name }} vault keystore from control node to remote"
+#  become: True
+#  ansible.builtin.copy:
+#    src: "{{ jws.vault.keystore }}"
+#    dest: "{{ jws_home }}"
+#    owner: "{{ jws.user }}"
+#    group: "{{ jws.group }}"
+#    mode: 0640
+#
+#- name: "Copy {{ jws.service.hr_name }} vault properties file from control node to remote"
+#  become: True
+#  ansible.builtin.copy:
+#    src: "{{ jws.vault.properties }}"
+#    dest: "{{ jws_home }}/conf/"
+#    owner: "{{ jws.user }}"
+#    group: "{{ jws.group }}"
+#    mode: 0640
+#
+#- name: "Copy {{ jws.service.hr_name }} vault data file from control node to remote"
+#  become: True
+#  ansible.builtin.copy:
+#    src: "{{ jws.vault.data }}"
+#    dest: "{{ jws_home }}"
+#    owner: "{{ jws.user }}"
+#    group: "{{ jws.group }}"
+#    mode: 0640
+
+- name: Check if the keystore already exists
+  stat:
+    path: "{{ jws_home }}/{{ jws_vault_name }}"
+  register: keystore_stat
+
+- name: Generate {{ jws_vault_name }} with keytool
+  command: >
+    keytool -genseckey
+    -keystore {{ jws_home }}/vault.keystore
+    -alias {{ jws_tomcat_vault_alias }}
+    -storetype jceks
+    -keyalg AES
+    -keysize 128
+    -storepass {{ jws_tomcat_vault_storepass }}
+    -keypass {{ jws_tomcat_vault_keypass }}
+    -validity 730
+  when: not keystore_stat.stat.exists
+
+- name: Run tomcat-vault.sh to generate {{ jws_vault_properties }} configuration
+  command: >
+    /opt/rh/jws6/root/usr/bin/tomcat-vault.sh
+    --keystore {{ jws_home }}/{{ jws_vault_name }}
+    --keystore-password {{ jws_tomcat_vault_storepass }}
+    --alias {{ jws_tomcat_vault_alias }}
+    --enc-dir {{ jws_home }}
+    --iteration {{ jws_tomcat_vault_iteration }}
+    --salt {{ jws_tomcat_vault_salt }}
+    --generate-config {{ jws_home }}/conf/{{ jws_vault_properties }}
+  when: not keystore_stat.stat.exists    
+
+- name: Run tomcat-vault.sh to generate encrypted credentials
+  command: >
+    /opt/rh/jws6/root/usr/bin/tomcat-vault.sh
+    --keystore {{ jws_home }}/{{ jws_vault_name }}
+    --keystore-password {{ jws_tomcat_vault_storepass }}
+    --alias {{ jws_tomcat_vault_alias }}
+    --enc-dir {{ jws_home }}
+    --iteration {{ jws_tomcat_vault_iteration }}
+    --salt {{ jws_tomcat_vault_salt }}
+    --vault-block my_block
+    --attribute manager_user
+    --sec-attr {{ jws_manager_user }}
+
+- name: Run tomcat-vault.sh to generate encrypted credentials
+  command: >
+    /opt/rh/jws6/root/usr/bin/tomcat-vault.sh
+    --keystore {{ jws_home }}/{{ jws_vault_name }}
+    --keystore-password {{ jws_tomcat_vault_storepass }}
+    --alias {{ jws_tomcat_vault_alias }}
+    --enc-dir {{ jws_home }}
+    --iteration {{ jws_tomcat_vault_iteration }}
+    --salt {{ jws_tomcat_vault_salt }}
+    --vault-block my_block
+    --attribute manager_password
+    --sec-attr {{ jws_manager_pass }}
+
+- name: Run tomcat-vault.sh to generate encrypted credentials
+  command: >
+    /opt/rh/jws6/root/usr/bin/tomcat-vault.sh
+    --keystore {{ jws_home }}/{{ jws_vault_name }}
+    --keystore-password {{ jws_tomcat_vault_storepass }}
+    --alias {{ jws_tomcat_vault_alias }}
+    --enc-dir {{ jws_home }}
+    --iteration {{ jws_tomcat_vault_iteration }}
+    --salt {{ jws_tomcat_vault_salt }}
+    --vault-block my_block    
+    --attribute db_username
+    --sec-attr {{ datasource_db_username }}
+
+- name: Run tomcat-vault.sh to generate encrypted credentials
+  command: >
+    /opt/rh/jws6/root/usr/bin/tomcat-vault.sh
+    --keystore {{ jws_home }}/{{ jws_vault_name }}
+    --keystore-password {{ jws_tomcat_vault_storepass }}
+    --alias {{ jws_tomcat_vault_alias }}
+    --enc-dir {{ jws_home }}
+    --iteration {{ jws_tomcat_vault_iteration }}
+    --salt {{ jws_tomcat_vault_salt }}
+    --vault-block my_block
+    --attribute db_password
+    --sec-attr {{ datasource_db_password }}    
+
+
+#- name: Ejecutar tomcat-vault.sh para generar credenciales cifradas
+#  command: >
+#    /opt/rh/jws6/root/usr/bin/tomcat-vault.sh 
+#    --keystore {{ jws_home }}/{{ jws_vault_name }}
+#    --keystore-password {{ jws_tomcat_vault_storepass }}
+#    --alias {{ jws_tomcat_vault_alias }}
+#    --enc-dir {{ jws_home }}
+#    --iteration {{ jws_tomcat_vault_iteration }}
+#    --salt {{ jws_tomcat_vault_salt }}
+#    --vault-block my_block
+#    --attribute manager_password
+#    --sec-attr {{ jws_manager_pass }}

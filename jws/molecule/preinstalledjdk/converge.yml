@@ -1,0 +1,10 @@
+---
+- name: "Install JWS using a pre-installed JDK."
+  hosts: all
+  vars_files:
+    - vars.yml
+  roles:
+    - role: middleware_automation.jws.jws
+      jws_systemd_enabled: True
+      jws_java_home: "{{ jdk_home }}"
+      jws_service_systemd_type: forking

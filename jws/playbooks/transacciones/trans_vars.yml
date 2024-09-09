@@ -1,0 +1,80 @@
+---
+
+jws_setup: true
+jws_java_version: 21
+jws_listen_http_bind_address: 0.0.0.0
+jws_systemd_enabled: True
+jws_service_systemd_type: forking
+jws_selinux_enabled: False
+jws_firewalld_enabled: True
+jws_install_method: rpm
+
+jws_manager_enabled: True
+
+# tomcat AJP Connector Config
+jws_listen_ajp_enabled: True
+jws_listen_ajp_address: 0.0.0.0
+jws_listen_ajp_connection_timeout: "60000"
+jws_listen_ajp_keep_alive_timeout: "20000"
+jws_listen_ajp_max_threads: "2400"
+jws_listen_ajp_allow_trace: false
+
+# Variables para JAVA_OPTS y JAVA_JDK_OPTS en archivo tomcat.conf
+jws_java_opts: >
+  -XX:+UseG1GC
+  -XX:+ExplicitGCInvokesConcurrent
+  -XX:MaxGCPauseMillis=500
+  -Xms4096M
+  -Xmx16384M
+  -Xlog:gc*,safepoint=info:file=logs/gc_%p_%t.log:time,uptime:filecount=5,filesize=10M
+  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/
+  -XX:MaxDirectMemorySize=2G -XX:MaxMetaspaceSize=2G
+  -Dcom.sun.management.jmxremote.port=5050 -Dcom.sun.management.jmxremote.rmi.port=5050 
+  -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false 
+  -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.host=127.0.0.1
+
+jws_jdk_java_opts: >
+  --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED 
+  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED 
+  -server -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent -XX:MaxGCPauseMillis=500 -Dlog4j2.formatMsgNoLookups=True
+
+# Database Resource JDNI
+datasource:
+    jdbc_name: "jdbc/michi"
+    jdbc_auth: "Container"
+    driver_class_name: "com.ibm.as400.access.AS400JDBCDriver"
+    validation_query: "SELECT 1 FROM sysibm.sysdummy1"
+    remove_abandoned: "true"
+    test_on_borrow: "true"
+    log_abandoned: "true"
+    datasource_type: "javax.sql.DataSource"
+    max_total: 64
+    remove_abandoned_timeout: 70
+    db_factory: "mifactory"
+    db_url: "jdbc:as400://miip/mibase"
+
+
+#web_xml:
+#  filter: >
+#    <filter>
+#        <filter-name>CharacterEncodingFilter</filter-name>
+#        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+#        <init-param>
+#            <param-name>encoding</param-name>
+#            <param-value>UTF-8</param-value>
+#        </init-param>
+#        <init-param>
+#            <param-name>forceEncoding</param-name>
+#            <param-value>true</param-value>
+#        </init-param>
+#    </filter>
+#  filter_mapping: >
+#    <filter-mapping>
+#      <filter-name>CharacterEncodingFilter</filter-name>
+#      <url-pattern>/*</url-pattern>
+#    </filter-mapping>
+#  
+#  session: >
+#    <session-config>
+#        <session-timeout>30</session-timeout>
+#    </session-config>  

@@ -1,0 +1,15 @@
+---
+- name: "Red Hat JBoss Web Server installation and configuration"
+  hosts: all
+  vars_files:
+    - ../../playbooks/vars.yml
+  roles:
+    - name: middleware_automation.jws.jws
+
+- name: "Red Hat JBoss Web Server uninstallation"
+  hosts: all
+  post_tasks:
+    - name: "Perform uninstall"
+      ansible.builtin.include_role:
+        name: middleware_automation.jws.jws
+        tasks_from: uninstall.yml

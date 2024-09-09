@@ -1,0 +1,10 @@
+---
+- name: Prepare
+  hosts: all
+  tasks:
+
+    - name: "Run preparation common to all scenario"
+      ansible.builtin.include_tasks: ../common_prepare.yml
+      vars:
+        jws_molecule_assets:
+          - "{{ assets_server }}/webserver/5.6.0/jws-5.6.0-application-server.zip"

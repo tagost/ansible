@@ -1,0 +1,40 @@
+---
+- name: "Ensure required parameters are provided."
+  ansible.builtin.assert:
+    that:
+      - jws_firewalld_package_name is defined
+      - jws_listen_http_port is defined
+    quiet: true
+
+- name: "Ensure firewalld is available."
+  become: true
+  ansible.builtin.package:
+    name: "{{ jws_firewalld_package_name }}"
+    state: present
+
+- name: "Ensure firewalld is running."
+  become: true
+  ansible.builtin.service:
+    name: "{{ jws_firewalld_service_name | default('firewalld') }}"
+    state: started
+    enabled: true
+
+- name: "Ensure firewalld allows communication over {{ jws_listen_http_port }}."
+  become: True
+  ansible.posix.firewalld:
+    port: "{{ jws_listen_http_port }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: True
+  when:
+    - jws_listen_http_port is defined
+
+- name: "Ensure firewalld allows communication over {{ jws_listen_ajp_port }}."
+  become: True
+  ansible.posix.firewalld:
+    port: "{{ jws_listen_ajp_port }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: True
+  when:
+    - jws_listen_ajp_enabled is defined

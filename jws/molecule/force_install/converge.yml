@@ -1,0 +1,22 @@
+---
+- name: "Newer version installation / jdk 11 update"
+  hosts: all
+  pre_tasks:
+    - name: "Set JWS version if resource available"
+      ansible.builtin.set_fact:
+        jws_version: 5.7.0
+      when:
+        - "(lookup('env', 'PWD') | default('/opt') + '/jws-5.7.0-application-server.zip') is exists"
+        - jws_version is defined
+  vars:
+    jws_apply_patches: False
+    jws_selinux_enabled: False
+  roles:
+    - role: middleware_automation.jws.jws
+      jws_setup: true
+      jws_listen_http_bind_address: 127.0.0.1
+      jws_systemd_enabled: True
+      jws_service_systemd_type: forking
+      jws_force_install: true
+      jws_java_version: 11
+      jws_native: False

@@ -1,0 +1,25 @@
+---
+- name: "Check required parameter(s) are provided"
+  ansible.builtin.assert:
+    that:
+      - jws.install_dir is defined
+    quiet: true
+    fail_msg: "One or more required parameters for cumulative patch application is missing."
+
+- name: "Apply CPs"
+  ansible.builtin.include_tasks: apply_cp/apply_cp.yml
+  vars:
+    archive_file_suffix: "-application-server.zip"
+
+- name: "Download and apply native patch from RHN (if credentials provided)."
+  when:
+    - jws_version is defined
+    - jws_native
+    - (ansible_facts is defined and ansible_facts['distribution_major_version'] is defined) or (jws_native_rhel_version is defined and jws_native_rhel_version | length > 0)
+  block:
+    - name: "Apply native patch."
+      ansible.builtin.include_tasks: apply_cp/apply_cp.yml
+      vars:
+        archive_file_suffix: "{{ (jws_version.startswith('6') | \
+                                  ternary('-optional-native-components-RHEL', '-application-server-RHEL')) }}{{ jws_native_rhel_version | \
+                                  default(ansible_facts['distribution_major_version']) }}-{{ jws_patch_native_arch }}.zip"

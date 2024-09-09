@@ -1,0 +1,88 @@
+---
+- name: Check arguments
+  ansible.builtin.assert:
+    that:
+      - jws.rpm is defined
+      - jws.rpm != ""
+    quiet: true
+    fail_msg: "No RPM package name provided."
+
+- name: "Verify distribution"
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "RedHat"
+    quiet: true
+    fail_msg: "RPM install can only work on RedHat based distribution."
+  when:
+    - ansible_os_family is defined
+
+- name: "Verify jws_home"
+  ansible.builtin.assert:
+    that:
+      - jws_home is defined
+      - jws_home is regex('/opt/rh/jws[5-6]/root/usr/share/tomcat')
+    quiet: true
+    fail_msg: "{{ jws.service.hr_name }} HOME {{ jws_home | default('undefined') }} does not match the one provided by RPM."
+
+- name: "Set dnf command for RPM installation"
+  ansible.builtin.set_fact:
+    dnf_command: "'groupinstall'"
+    info_msg: "install {{ jws.rpm }}"
+  when:
+    - not dnf_command is defined
+
+- name: "Set dnf command for RPM uninstall"
+  ansible.builtin.set_fact:
+    info_msg: "remove {{ jws.rpm }}"
+  when:
+    - dnf_command is defined
+    - dnf_command != "'groupinstall'"
+
+
+- name: "Load stat of {{ jws_rpm_root_dir }}/enable"
+  become: True
+  ansible.builtin.stat:
+    path: "{{ jws_rpm_root_dir }}/enable"
+  register: jws_rpm_root_dir_enable_stat
+
+- name: Enable JBoss Web Server 6 repo
+  community.general.rhsm_repository:
+    name: jws-6-for-rhel-9-x86_64-rpms      
+  when:
+    - not jws_rpm_root_dir_enable_stat.stat.exists
+
+- name: "Perform {{ info_msg }}"
+  become: True
+  ansible.builtin.command:
+    cmd: "dnf {{ dnf_command | default('groupinstall') }} -y {{ jws.rpm }}"
+    creates: "{{ jws_rpm_root_dir }}/enable"
+  when:
+    - jws_rpm_root_dir_enable_stat is defined and jws_rpm_root_dir_enable_stat.stat is defined
+    - jws_rpm_root_dir_enable_stat.stat.exists is defined
+    - not jws_rpm_root_dir_enable_stat.stat.exists
+  notify:
+    - Ensure Tomcat runs under systemd
+
+- name: "Install tomcat vault extra packages, if requested."
+  when:
+    - jws_tomcat_vault_enabled is defined and jws_tomcat_vault_enabled
+  block:
+    - name: "Install package for tomcat_vault: {{ jws.vault.package_name }}"
+      become: True
+      ansible.builtin.package:
+        name: "{{ jws.vault.package_name }}"
+        state: present
+
+- name: "Remove older version of java"
+  ansible.builtin.shell: "rpm -e --nodeps java-11-openjdk-headless; echo 0"
+  ignore_errors: yes
+
+- name: Add JWS_HOME as global variable
+  block:
+  - name: Create global_env.sh in /etc/profile.d
+    copy:
+      dest: /etc/profile.d/global_env.sh
+      content: |
+        export JWS_HOME="{{ jws_home }}"
+  - name: Load variables
+    shell: source /etc/profile

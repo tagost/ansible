@@ -1,0 +1,28 @@
+---
+- name: "Apply patch {{ jws_install_dir }}/{{ patch_bundle }} on {{ jws_home }}."
+  become: "{{ jws_install_unarchive_require_privilege_escalation }}"
+  when:
+    - not last_patch_status.stat.exists
+  block:
+    - name: "Update {{ jws_home }} with cumulative patch {{ jws_install_dir }}/{{ patch_bundle }}."
+      ansible.builtin.unarchive:
+        src: "{{ jws_install_dir }}/{{ patch_bundle }}"
+        dest: "{{ jws.install_dir }}"
+        remote_src: True
+        owner: "{{ jws.user | default(omit) }}"
+        group: "{{ jws.group | default(omit) }}"
+        mode: 0750
+      notify:
+        - Restart Tomcat service
+
+    - name: "Set checksum file for {{ patch_version }}"
+      ansible.builtin.copy:
+        dest: "{{ patch_checksum_file }}"
+        content: "Patch v{{ patch_version_for_msg | default(patch_version) }} (Arch:{{ native_patch_arch | default('noarch') }}"
+        owner: "{{ jws.user }}"
+        group: "{{ jws.group }}"
+        mode: 0640
+  rescue:
+    - name: "Reports issue to user."
+      ansible.builtin.debug:
+        msg: "This should NEVER happen, something is wrong."

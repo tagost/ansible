@@ -1,0 +1,35 @@
+---
+- name: Prepare
+  hosts: all
+  vars_files:
+    - vars.yml
+  pre_tasks:
+    - name: "Run preparation common to all scenario"
+      ansible.builtin.include_tasks: ../common_prepare.yml
+      vars:
+        jws_molecule_assets:
+          - "{{ assets_server }}/webserver/5.6.0/jws-5.6.0-application-server.zip"
+
+  tasks:
+    - name: "Prepare JDK for scenario"
+      become: True
+      block:
+        - name: "Download JDK from {{ jdk_url }}"
+          ansible.builtin.unarchive:
+            src: "{{ jdk_url }}"
+            dest: "{{ jdk_install_dir }}"
+            remote_src: True
+
+        - name: "Ensure new JDK is registered as an alternatives for the java command."
+          ansible.builtin.command: "update-alternatives --install /usr/bin/java java {{ jdk_home }}/bin/java 1"
+          changed_when: False
+          register: result_of_update_alternative
+
+        - name: "Ensure new JDK is registered as an alternatives for the java command."
+          ansible.builtin.command: "java --version"
+          changed_when: False
+          register: verify_jdk_install
+
+        - name: "Test"
+          ansible.builtin.debug:
+            msg: "{{ verify_jdk_install }}"

@@ -1,0 +1,57 @@
+---
+- name: "Check foreign processes owned by {{ jws.user }} user"
+  ansible.builtin.shell: |
+    set -o pipefail
+    ps --no-headers -u {{ jws.user }} | grep -v grep | awk '{print $1}'
+  args:
+    executable: /bin/bash
+  become: True
+  register: running_processes
+  changed_when: False
+
+- name: "Terminate foreign processes"
+  ansible.builtin.command: "kill -15 {{ running_processes.stdout_lines | join(' ') }}"
+  become: True
+  when:
+    - jws_force_install
+    - running_processes.stdout_lines | length > 0
+  changed_when: True
+
+- name: "Check foreign processes owned by {{ jws.user }} user"
+  ansible.builtin.shell: |
+    set -o pipefail
+    ps --no-headers -u {{ jws.user }} | grep -v grep | awk '{print $1}'
+  args:
+    executable: /bin/bash
+  become: True
+  failed_when: running_processes.stderr_lines | length > 0
+  changed_when: False
+  register: running_processes
+
+- name: "Kill foreign processes"
+  ansible.builtin.command: "kill -9 {{ running_processes.stdout_lines | join(' ') }}"
+  become: True
+  when:
+    - jws_force_install
+    - running_processes.stdout_lines | length > 0
+  changed_when: True
+
+- name: "Create group: {{ jws.group }}"
+  become: True
+  ansible.builtin.group:
+    name: "{{ jws.group }}"
+    gid: "{{ jws.gid }}"
+    system: True
+  when: jws_force_install
+
+- name: "Create user: {{ jws.user }}"
+  become: True
+  ansible.builtin.user:
+    name: "{{ jws.user }}"
+    uid: "{{ jws.uid }}"
+    system: True
+    groups: "{{ jws.group }}"
+    home: "{{ jws_home }}"
+    shell: /sbin/nologin
+    comment: "User for Apache Tomcat"
+  when: jws_force_install

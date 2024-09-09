@@ -1,0 +1,45 @@
+---
+- name: "Load data on target's file (if exists)"
+  ansible.builtin.stat:
+    path: "{{ jws_install_dir }}/{{ patch_bundle }}"
+  register: patch_archive_path
+
+- name: "Copy patch archive {{ jws_install_dir }}/{{ patch_bundle }} to target nodes"
+  ansible.builtin.copy:
+    src: "{{ jws_archive_repository }}/{{ patch_bundle }}"
+    dest: "{{ jws_install_dir }}/{{ patch_bundle }}"
+    owner: "{{ jws.user | default(omit) }}"
+    group: "{{ jws.group | default(omit) }}"
+    mode: 0640
+  register: new_version_downloaded
+  become: True
+  when:
+    - patch_archive_path is defined
+    - patch_archive_path.stat is defined
+    - not patch_archive_path.stat.exists
+
+- name: "Check deployed patch state"
+  ansible.builtin.stat:
+    path: "{{ jws_install_dir }}/{{ patch_bundle }}"
+  become: True
+  register: patch_info
+
+- name: "Set patch checksum"
+  ansible.builtin.set_fact:
+    patch_checksum_file: "{{ jws_home }}/../.applied_patch_checksum_{{ patch_info.stat.checksum }}.txt"
+  when:
+    - patch_info is defined
+    - patch_info.stat is defined
+    - patch_info.stat.checksum is defined
+
+- name: "Check {{ patch_checksum_file }} state"
+  ansible.builtin.stat:
+    path: "{{ patch_checksum_file }}"
+  become: True
+  register: last_patch_status
+
+- name: "Print information message if patch has already been applied"
+  ansible.builtin.debug:
+    msg: "Patch v{{ patch_version }} (checksum {{ patch_info.stat.checksum }}, arch: {{ native_patch_arch | default('noarch') }}) has already been applied."
+  when:
+    - last_patch_status.stat.exists

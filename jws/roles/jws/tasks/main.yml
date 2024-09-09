@@ -1,0 +1,226 @@
+---
+# The following is only for upstream: if jws_version is not defined
+# we use the latest version of Apache Tomcat
+- name: Check for conflicting Java variables
+  ansible.builtin.fail:
+    msg: "Error: Set only one of jws_java_version or jws_java_home, not both. For better understanding check jws role README file"
+  when: jws_java_version is defined and jws_java_home is defined
+
+- name: "Set default values"
+  ansible.builtin.set_fact:
+    zipfile_name: "apache-tomcat-{{ tomcat_version }}.zip"
+    zipfile_url: "{{ jws_apache_archive_download_url_prefix }}{{ tomcat_version.split('.')[0] }}/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.zip"
+  when:
+    - not jws_version is defined
+
+- name: "Check that jws_home has been defined."
+  ansible.builtin.assert:
+    that:
+      - jws_home is defined
+      - jws_home | length > 0
+
+- name: "Add firewalld to dependencies list (if enabled)"
+  ansible.builtin.set_fact:
+    jws_dependencies_list: "{{ jws_dependencies_list + jws_firewalld_package_name }}"
+  when:
+    - jws_firewalld_enabled is defined and jws_firewalld_enabled
+
+- name: "Add 'openssl' and 'apr' to dependencies list required for natives (if enabled)"
+  ansible.builtin.set_fact:
+    jws_dependencies_list: "{{ jws_dependencies_list + ['openssl', 'apr'] }}"
+  when: jws_native
+
+- name: "Include tasks for Java installation (if Java version is provided)"
+  ansible.builtin.include_tasks: java_install.yml
+  when: jws_java_home is not defined and jws_java_version is defined
+
+- name: "Install required dependencies"
+  ansible.builtin.include_tasks: fastpackage.yml
+  vars:
+    packages_list: "{{ jws_dependencies_list }}"
+
+- name: "Ensure tomcatjss rpm is not installed"
+  become: True
+  ansible.builtin.dnf:
+    name: tomcatjss
+    state: absent
+  when:
+    - jws.check_jws_ss_absent is defined
+    - jws.check_jws_ss_absent
+
+- name: Check user/groups and whether force install needed
+  become: True
+  block:
+    - name: "Create group: {{ jws.group }}"
+      ansible.builtin.group:
+        name: "{{ jws.group }}"
+        gid: "{{ jws.gid }}"
+        system: True
+
+    - name: "Create user: {{ jws.user }}"
+      ansible.builtin.user:
+        name: "{{ jws.user }}"
+        uid: "{{ jws.uid }}"
+        system: True
+        group: "{{ jws.group }}"
+        append: False
+        home: "{{ jws_home }}"
+        shell: /sbin/nologin
+        comment: "User for Apache Tomcat"
+  rescue:
+    - name: "Inform of process owned by {{ jws.user }} already running"
+      ansible.builtin.assert:
+        that:
+          - jws_force_install
+        fail_msg: "Found a process owned by {{ jws.user }} and jws_force_install is false, aborting installation"
+        success_msg: "Found a process owned by {{ jws.user }} and jws_force_install is true, continuing installation anyway"
+
+    - name: "Include force install steps"
+      ansible.builtin.include_tasks: install/force_install.yml
+      when: jws_force_install
+
+- name: Perform setup
+  when: jws_setup
+  block:
+    - name: "Check state of install_dir: {{ jws_install_dir }}"
+      ansible.builtin.stat:
+        path: "{{ jws_install_dir }}"
+      become: True
+      register: install_path
+
+    - name: "Ensure install dir is created: {{ jws_install_dir }}"
+      ansible.builtin.file:
+        path: "{{ jws_install_dir }}"
+        state: directory
+        owner: "{{ jws.user }}"
+        group: "{{ jws.group }}"
+        mode: 0750
+      become: True
+      when:
+        - not install_path.stat.exists
+        - jws.install_method is defined
+        - jws.install_method != "rpm"
+
+    - name: "Set defaults values based on facts (if values not provided)"
+      ansible.builtin.include_tasks: defaults.yml
+
+    - name: "Include install tasks"
+      ansible.builtin.include_tasks: install.yml
+      when:
+        - jws.install_method is defined
+
+    - name: "Include systemd tasks"
+      ansible.builtin.include_tasks: systemd/systemd.yml
+      when:
+        - jws.install_method is defined
+        - jws.install_method != "rpm"
+        - jws.service is defined
+        - jws.service.enabled is defined
+        - jws.service.enabled
+
+    - name: Include patch install tasks
+      ansible.builtin.include_tasks: apply_cp/main.yml
+      when:
+        - jws_apply_patches is defined
+        - jws_apply_patches
+
+    - name: "Ensure {{ jws_home }}/ directories have appropriate privileges"
+      become: True
+      ansible.builtin.file:
+        path: "{{ jws_home }}/{{ item }}/"
+        owner: "{{ jws.user }}"
+        group: "{{ jws.group }}"
+        mode: 0750
+        state: directory
+      loop:
+        - conf
+        - temp
+        - logs
+        - webapps
+        - bin
+
+    #- name: "Ensure {{ jws_home }}/ files have the recommended priviliges, owner and group"
+    #  become: True
+    #  ansible.builtin.file:
+    #    path: "{{ jws_home }}/{{ item }}"
+    #    owner: "{{ jws.user }}"
+    #    group: "{{ jws.group }}"
+    #    mode: "{{ jws_config_files_mask | default('0640') }}"
+    #  loop:
+    #    - "{{ jws.conf.properties }}"
+    #    - "{{ jws.conf.policy }}"
+    #    - "{{ jws.conf.logging }}"
+    #    - "{{ jws.conf.jaspic_providers }}"
+    #    - "{{ jws.conf.users }}"
+#
+    - name: "Include ajp sanity check tasks"
+      ansible.builtin.include_tasks: sanity_checks/ajp.yml
+      when:
+        - jws.listen.ajp.enabled is defined
+        - jws_listen_ajp_enabled
+
+    - name: "Include https sanity check tasks"
+      ansible.builtin.include_tasks: sanity_checks/https.yml
+      when:
+        - jws_listen_https_enabled is defined
+        - jws_listen_https_enabled
+
+    - name: "Deploy custom configuration files"
+      become: True
+      ansible.builtin.template:
+        src: "{{ item.template }}"
+        dest: "{{ item.dest }}"
+        owner: "{{ jws.user }}"
+        group: "{{ jws.group }}"
+        mode: "{{ jws_config_files_mask | default('0640') }}"
+      loop:
+        - { template: "{{ jws.conf.templates.server }}", dest: "{{ jws_home }}/{{ jws.conf.server }}" }
+        - { template: "{{ jws.conf.templates.web }}", dest: "{{ jws_home }}/{{ jws.conf.web }}" }
+        - { template: "{{ jws.conf.templates.context }}", dest: "{{ jws_home }}/{{ jws.conf.context }}" }
+        - { template: "{{ jws.conf.templates.catalina_properties }}", dest: "{{ jws_home }}/{{ jws.conf.properties }}" }
+        - { template: "{{ jws.conf.templates.tomcat_users }}", dest: "{{ jws_home }}/{{ jws.conf.users }}" }
+        - { template: "{{ jws.conf.templates.tomcat_conf }}", dest: "{{ jws_home }}/{{ jws.conf.tomcat }}" }
+        - { template: "{{ jws.conf.templates.manager_conf }}", dest: "{{ jws_home }}/{{ jws.conf.manager }}" }
+      notify:
+        - Restart Tomcat service
+
+    - name: "Include selinux configuration tasks"
+      ansible.builtin.include_tasks: systemd/selinux.yml
+      when:
+        - jws.install_method is defined
+        - jws.install_method != "rpm"
+        - jws_selinux_enabled
+
+    - name: "Remove apps"
+      ansible.builtin.file:
+        path: "{{ jws_home }}/webapps/{{ item }}"
+        state: absent
+      loop: "{{ jws.apps.to_remove }}"
+      become: True
+      when: jws.apps.to_remove is defined
+
+    - name: Copiar librerías a la carpeta lib de Tomcat
+      copy:
+        src: files/libraries/
+        dest: "{{ jws_home }}/lib"
+        owner: tomcat
+        group: tomcat
+        mode: '0644'
+        
+    - name: "Create vault configuration (if enabled)"
+      ansible.builtin.include_tasks: tomcat_vault.yml
+      when:
+        - jws.vault.enable
+
+    - name: "Ensure {{ jws_home }}/ files have the recommended priviliges, owner and group"
+      file:
+        path: "{{ jws_home }}"
+        owner: tomcat
+        group: tomcat
+        #mode: '0755'
+        recurse: yes
+
+    - name: "Ensure firewalld, if enabled, allows communication over {{ jws_listen_http_port }}."
+      ansible.builtin.include_tasks: firewalld.yml
+      when:
+        - jws_firewalld_enabled is defined and jws_firewalld_enabled
