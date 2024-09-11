@@ -1,7 +1,7 @@
 ---
 - name: Install Jboss Web Server 6
   hosts: all
-  remote_user: "gsosa"
+  remote_user: "ansible"
   become: true
   become_method: sudo
     #gather_facts: false
