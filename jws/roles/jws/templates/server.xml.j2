@@ -136,29 +136,41 @@
     -->
          <Connector port="{{ jws.listen.http.port }}"
                     protocol="{{ jws.listen.http.protocol }}"
-{% if jws.listen.http.allow_trace is defined %}
-                    allowTrace="{{ jws.listen.http.allow_trace }}"
+{% if jws_listen_http_allow_trace is defined %}
+                    allowTrace="{{ jws_listen_http_allow_trace }}"
 {% endif %}
-{% if jws.listen.http.bind_address is defined %}
-                    address="{{ jws.listen.http.bind_address }}"
+{% if jws_listen_http_bind_address is defined %}
+                    address="{{ jws_listen_http_bind_address }}"
 {% endif %}
-{% if jws.listen.http.connection_timeout is defined %}
-                    connectionTimeout="{{ jws.listen.http.connection_timeout }}"
+{% if jws_listen_http_connection_timeout is defined %}
+                    connectionTimeout="{{ jws_listen_http_connection_timeout }}"
 {% endif %}
-{% if jws.listen.http.xpowered_by is defined %}
-                    xpoweredBy="{{ jws.listen.http.xpowered_by }}"
+{% if jws_listen_http_xpowered_by is defined %}
+                    xpoweredBy="{{ jws_listen_http_xpowered_by }}"
 {% endif %}
-{% if jws.listen.http.server is defined %}
-                    server="{{ jws.listen.http.server }}"
+{% if jws_listen_http_server is defined %}
+                    server="{{ jws_listen_http_server }}"
 {% endif %}
-{% if jws.listen.http.client_auth is defined %}
-                    clientAuth="{{ jws.listen.http.client_auth }}"
+{% if jws_listen_http_client_auth is defined %}
+                    clientAuth="{{ jws_listen_http_client_auth }}"
 {% endif %}
-{% if jws.listen.http.max_http_header_size is defined %}
-                    maxHttpHeaderSize="{{ jws.listen.http.max_http_header_size }}"
+{% if jws_listen_http_max_http_header_size is defined %}
+                    maxHttpHeaderSize="{{ jws_listen_http_max_http_header_size }}"
 {% endif %}
-{% if jws.listen.https.port is defined %}
-                    redirectPort="{{ jws.listen.https.port }}"
+{% if jws_listen_http_max_threads is defined %}
+                    maxThreads="{{ jws_listen_http_max_threads }}"
+{% endif %}
+{% if jws_listen_http_accept_or_thread_count is defined %}
+                    acceptorThreadCount="{{ jws_listen_http_accept_or_thread_count }}"
+{% endif %}
+{% if jws_listen_http_accept_or_count is defined %}
+                    acceptorCount="{{ jws_listen_http_accept_or_count }}"
+{% endif %}
+{% if jws_listen_http_min_spare_threads is defined %}
+                    minSpareThreads="{{ jws_listen_http_min_spare_threads }}"
+{% endif %}
+{% if jws_listen_https_port is defined %}
+                    redirectPort="{{ jws_listen_https_port }}"
 {% endif %}
 />
 
@@ -256,7 +268,7 @@
     <!-- You should set jvmRoute to support load-balancing via AJP ie :
     <Engine name="Catalina" defaultHost="localhost" jvmRoute="jvm1">
     -->
-    <Engine name="Catalina" defaultHost="localhost">
+    <Engine name="Catalina" defaultHost="localhost"{% if jws_jvm_route is defined %} jvmRoute="{{ jws_jvm_route }}"{% endif %}>
 
       <!--For clustering, please take a look at documentation at:
           /docs/cluster-howto.html  (simple how to)

@@ -73,12 +73,7 @@ jws_listen_http_port: '8080'
 jws_listen_http_bind_address: 'localhost'
 jws_listen_http_enabled: True
 jws_listen_http_protocol: "HTTP/1.1"
-jws_listen_http_allow_trace: false
-jws_listen_http_connection_timeout: "20000"
-jws_listen_http_xpowered_by: false
-jws_listen_http_server: My Server
-jws_listen_http_client_auth: true
-jws_listen_http_max_http_header_size: 8192
+
 
 # HTTPS Connector Config
 jws_listen_https_enabled: False

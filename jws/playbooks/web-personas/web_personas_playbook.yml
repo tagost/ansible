@@ -1,10 +1,10 @@
 ---
 - name: "Red Hat JBoss Web Server installation and configuration"
-  hosts: auth
+  hosts: personas
   remote_user: ansible
   become: yes
   vars_files:
-    - auth_vars.yml
+    - web_personas_vars.yml
     - secret_vars.yml
   roles:
     - name: jws

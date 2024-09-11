@@ -73,16 +73,21 @@
         name: "{{ jws.vault.package_name }}"
         state: present
 
-- name: "Remove older version of java"
-  ansible.builtin.shell: "rpm -e --nodeps java-11-openjdk-headless; echo 0"
-  ignore_errors: yes
 
-- name: Add JWS_HOME as global variable
-  block:
-  - name: Create global_env.sh in /etc/profile.d
-    copy:
-      dest: /etc/profile.d/global_env.sh
-      content: |
-        export JWS_HOME="{{ jws_home }}"
-  - name: Load variables
-    shell: source /etc/profile
+- name: Validating java version
+  shell: "rpm -q java-11-openjdk-headless 2>/dev/null"
+  register: java_installed
+  failed_when: false
+  no_log: True
+  changed_when: false
+
+- name: "Remove older version of java"
+  ansible.builtin.shell: "rpm -e --nodeps java-11-openjdk-headless"
+  when: java_installed.rc == 0
+
+- name: Add JWS_HOME in /etc/environment
+  ansible.builtin.lineinfile:
+    path: /etc/environment
+    line: 'JWS_HOME="{{ jws_home }}"'
+    create: yes
+    state: present

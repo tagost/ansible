@@ -37,4 +37,14 @@
     state: enabled
     immediate: True
   when:
-    - jws_listen_ajp_enabled is defined
+    - jws_listen_ajp_enabled
+
+- name: "Ensure firewalld allows communication over {{ jws_jmx_port }}."
+  become: True
+  ansible.posix.firewalld:
+    port: "{{ jws_jmx_port }}/tcp"
+    permanent: true
+    state: enabled
+    immediate: True
+  when:
+    - jws_jmx_port is defined    

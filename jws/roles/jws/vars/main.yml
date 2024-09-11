@@ -40,13 +40,6 @@ jws:
       bind_address: "{{ jws_listen_http_bind_address }}"
       enabled: "{{ jws_listen_http_enabled }}"
       protocol: "{{ jws_listen_http_protocol }}"
-      allow_trace: "{{ jws_listen_http_allow_trace }}"
-      connection_timeout: "{{ jws_listen_http_connection_timeout }}"
-      xpowered_by: "{{ jws_listen_http_xpowered_by }}"
-      server: "{{ jws_listen_http_server }}"
-      client_auth: "{{ jws_listen_http_client_auth }}"
-      max_http_header_size: "{{ jws_listen_http_max_http_header_size }}"
-      redirect_port: "{{ jws_listen_https_port }}"
     https:
       port: "{{ jws_listen_https_port }}"
       bind_address: "{{ jws_listen_https_bind_address }}"

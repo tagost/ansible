@@ -12,17 +12,11 @@ jws_install_method: rpm
 jws_listen_http_port: '8080'
 jws_listen_http_bind_address: 0.0.0.0
 jws_listen_http_connection_timeout: "20000"
-jws_listen_http_max_threads: 8192
 
 jws_manager_enabled: True
 
 # tomcat AJP Connector Config
-jws_listen_ajp_enabled: True
-jws_listen_ajp_address: 0.0.0.0
-jws_listen_ajp_connection_timeout: "60000"
-jws_listen_ajp_keep_alive_timeout: "20000"
-jws_listen_ajp_max_threads: "2400"
-jws_listen_ajp_allow_trace: false
+jws_listen_ajp_enabled: False
 
 # Database Resource JDNI
 datasource:
@@ -34,13 +28,8 @@ datasource:
     test_on_borrow: "true"
     log_abandoned: "true"
     datasource_type: "javax.sql.DataSource"
-    max_active: 700
-    max_idle: 32
-    min_idle: 20
-    initial_size: 20
-    remove_abandoned_timeout: 10
-    max_wait: 5000
-    validation_interval: 60000
+    max_total: 256
+    max_active: 256
     #username: secret_vars.yaml
     #password: secret_vars.yaml
     db_factory: "mifactory"
@@ -53,7 +42,7 @@ jws_java_opts: >
   -XX:+ExplicitGCInvokesConcurrent
   -XX:MaxGCPauseMillis=500
   -Xms4096M
-  -Xmx16384M
+  -Xmx16384m
   -Xlog:gc*,safepoint=info:file=logs/gc_%p_%t.log:time,uptime:filecount=5,filesize=10M
   -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/
   -XX:MaxDirectMemorySize=2G -XX:MaxMetaspaceSize=2G
@@ -64,28 +53,28 @@ jws_java_opts: >
 jws_jdk_java_opts: >
   --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED 
   --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED 
-  -server -XX:+UseG1GC -XX:+ExplicitGCInvokesConcurrent -XX:MaxGCPauseMillis=500 -Dlog4j2.formatMsgNoLookups=True
+  -Dlog4j2.formatMsgNoLookups=True
 
 web_xml:
-  filter: >
-    <filter>
-        <filter-name>CharacterEncodingFilter</filter-name>
-        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
-        <init-param>
-            <param-name>encoding</param-name>
-            <param-value>UTF-8</param-value>
-        </init-param>
-        <init-param>
-            <param-name>forceEncoding</param-name>
-            <param-value>true</param-value>
-        </init-param>
-    </filter>
-  filter_mapping: >
-    <filter-mapping>
-      <filter-name>CharacterEncodingFilter</filter-name>
-      <url-pattern>/*</url-pattern>
-    </filter-mapping>
-  
+#  filter: >
+#    <filter>
+#        <filter-name>CharacterEncodingFilter</filter-name>
+#        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+#        <init-param>
+#            <param-name>encoding</param-name>
+#            <param-value>UTF-8</param-value>
+#        </init-param>
+#        <init-param>
+#            <param-name>forceEncoding</param-name>
+#            <param-value>true</param-value>
+#        </init-param>
+#    </filter>
+#  filter_mapping: >
+#    <filter-mapping>
+#      <filter-name>CharacterEncodingFilter</filter-name>
+#      <url-pattern>/*</url-pattern>
+#    </filter-mapping>
+#  
   session: >
     <session-config>
         <session-timeout>30</session-timeout>
